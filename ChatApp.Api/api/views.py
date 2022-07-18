@@ -8,9 +8,6 @@ from .models import Message
 
 # Create your views here.
 
-def get_csrf_token(request: HttpRequest):
-    return JsonResponse({"token": django.middleware.csrf.get_token(request)})
-
 
 def get_messages(request: HttpRequest):
     return JsonResponse(list(Message.objects.order_by("created_at").all().values("id", "user_name", "content", "created_at")), safe=False)

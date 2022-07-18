@@ -1,0 +1,19 @@
+version: "3.7"
+
+services:
+  api:
+    image: python:3.9
+    working_dir: /app/ChatApp.Api
+    command: sh -c "pip install poetry && poetry install && poetry run python3 manage.py runserver"
+    ports:
+      - 2428:8000
+    volumes:
+      - ./:/app
+  site:
+    image: node:12-alpine
+    working_dir: /app/ChatApp.Site
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - 2429:3000
+    volumes:
+      - ./:/app
