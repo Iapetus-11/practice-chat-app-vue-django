@@ -1,87 +1,85 @@
 <script setup>
-import HelloWorld from "./components/HelloWorld.vue";
-import TheWelcome from "./components/TheWelcome.vue";
+import Message from './components/Message.vue';
+import { useCookies } from "vue3-cookies";
+
+window.cookies = useCookies().cookies;
+</script>
+
+<script>
+export default {
+  created() {
+    // fetch csrf token and set csrftoken cookie
+    this.updateCsrfToken();
+
+    // fetch messages
+    this.updateMessages();
+
+    setInterval(this.updateMessages, 500);
+  },
+  data() {
+    return {
+      messages: [],
+      messageBox: "",
+      userName: window.cookies.get("userName"),
+    }
+  },
+  methods: {
+    updateCsrfToken: function() {
+      fetch(`${import.meta.env.VITE_BASE_URL}/chat/csrf-token`)
+      .then(res => {
+        res.json()
+        .then(data => {
+          window.cookies.set("csrftoken", data.token);
+        })
+        .catch(e => console.error(e));
+      })
+      .catch(e => console.error(e));
+    },
+    getCsrfToken: function() {
+      return window.cookies.get("csrftoken");
+    },
+    updateMessages: function() {
+      fetch(`${import.meta.env.VITE_BASE_URL}/chat/messages`)
+      .then(res => {
+        res.json()
+        .then(data => {
+          this.messages = data;
+        })
+        .catch(e => console.error(e));
+      })
+      .catch(e => console.error(e));
+    },
+    sendMessage: function() {
+      const content = this.messageBox;
+      this.messageBox = "";
+
+      if (!this.userName) return;
+
+      window.cookies.set("userName", this.userName);
+
+      if (!content) return;
+
+      fetch(`${import.meta.env.VITE_BASE_URL}/chat/new-message`, {method: "POST", headers: {'X-CSRFToken': this.getCsrfToken(), "content-type": "application/json"}, body: JSON.stringify({msg_user_name: this.userName, msg_content: content})})
+      .catch(e => console.error(e));
+    }
+  }
+};
 </script>
 
 <template>
-  <header>
-    <img
-      alt="Vue logo"
-      class="logo"
-      src="./assets/logo.svg"
-      width="125"
-      height="125"
-    />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
+  <main class="w-full h-full fixed overflow-y-auto">
+    <div class="flex flex-col w-full h-full px-36 py-8 justify-center space-y-2">
+      <div class="flex flex-col w-full h-full space-y-3 overflow-y-scroll" ref="messages">
+        <Message v-for="message in messages" :key="message.id" :user_name="message.user_name" :content="message.content" />
+      </div>
+      <div class="flex flex-row w-full mt-auto pb-5 h-16 border-2 px-2 pt-5 space-x-2 rounded">
+        <input class="w-full px-3 -my-1 w-1/6" v-model="userName" placeholder="Type your name!" />
+        <input class="w-full px-3 -my-1" v-model="messageBox" v-on:keyup.enter="sendMessage" placeholder="Type in here! Press enter to send messages!" />
+      </div>
     </div>
-  </header>
-
-  <main>
-    <TheWelcome />
   </main>
 </template>
 
 <style>
-@import "./assets/base.css";
-
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-
-  font-weight: normal;
-}
-
-header {
-  line-height: 1.5;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-}
-
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
-}
-
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
-
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-}
+  
 </style>
